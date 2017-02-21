@@ -3,7 +3,7 @@
 # What is the SwitchBot opensource project?
 [SwitchBot](https://www.switch-bot.com) is a smart IoT robot to mechanically control all your switches and buttons. You can control the bot by your smartphone app ([iOS](https://itunes.apple.com/app/switchbot/id1087374760?mt=8) or  [Android](https://play.google.com/store/apps/details?id=com.theswitchbot.switchbot), SwitchLink, or other platform based on our open APIs.
 
-This project aims to provide a super light-weight solution to control your SwitchBot on the [Raspberry Pi](https://www.raspberrypi.org)/[OpenWRT](https://openwrt.org/) or any other Linux based board.
+This project aims to provide a super light-weight solution to control your SwitchBot on [Raspberry Pi](https://www.raspberrypi.org)/[OpenWRT](https://openwrt.org/) or any other Linux based board.
 
 # How to Install?
 
@@ -31,3 +31,5 @@ sudo python switchbot.py
   -  Follow instructions to input the device number you want to control....
 
 Enjoy:)
+
+Share your words in our [community](http://community.switch-bot.com/).
