@@ -14,11 +14,17 @@
 # limitations under the License.
 import pexpect
 import sys
+from bluepy.btle import Scanner, DefaultDelegate
+import binascii
 
-class DevScanner:
-    
+class ScanDelegate(DefaultDelegate): 
+    def __init__(self): 
+        DefaultDelegate.__init__(self)
+        
+class DevScanner(DefaultDelegate):
     def __init__( self ):
-        print("Scanner inited")
+        DefaultDelegate.__init__(self)
+        #print("Scanner inited")
 
     def dongle_start(self):
         self.con = pexpect.spawn('hciconfig hci0 up')
@@ -32,39 +38,58 @@ class DevScanner:
         time.sleep(3)
 
     def scan_loop(self):
+        service_uuid = '1bc5d5a50200b89fe6114d22000da2cb'
+        menufacturer_id = '5900f46d2c8a5f31'
+        dev_list =[]
+        bot_list =[]
+        enc_list =[]
+        link_list =[]
         self.con = pexpect.spawn('hciconfig')
         pnum = self.con.expect(["hci0",pexpect.EOF,pexpect.TIMEOUT])
         if pnum==0:
             self.con = pexpect.spawn('hcitool lescan')
-            self.con.expect('LE Scan ...', timeout=10)
+            #self.con.expect('LE Scan ...', timeout=5)
+            scanner = Scanner().withDelegate(DevScanner()) 
+            devices = scanner.scan(5.0)
             print "Start scanning..."
         else:
             raise Error("no bluetooth error")
-        exit_counter=0
-        #some bluetooth dongles may upload duplicates
-        repeat_counter=0
-        dev_list  = []
-        while True:
-            pnum = self.con.expect(["WoHand",pexpect.EOF,pexpect.TIMEOUT], timeout=5)
-            if pnum==0:    
-                after = self.con.after
-                before = self.con.before
-                mac = before.split()[-1]
-                if mac not in dev_list:
-                    dev_list.append(mac)
-                    repeat_counter = 0
-                else:
-                    repeat_counter += 1
-                if repeat_counter > 30:
-                    print "repeat_counter out"
-                    return dev_list
-            else:
-                print "scan timeout"
-                return dev_list
-            exit_counter += 1
-            if exit_counter > 60:
-                print "exit_counter out"
-                return dev_list
+
+        for dev in devices:
+            mac = 0
+            for (adtype, desc, value) in dev.getScanData():
+                #print adtype,desc,value
+                if desc == '16b Service Data' :
+                    model = binascii.a2b_hex(value[4:6])
+                    mode  = binascii.a2b_hex(value[6:8])
+                if desc == 'Local name' and value == "WoHand":
+                    mac   = dev.addr
+                    model = 'H'
+                    mode  = 0
+                elif desc == 'Complete 128b Services' and value == service_uuid :
+                    mac = dev.addr
+                    
+            if mac != 0 :
+                #print binascii.b2a_hex(model),binascii.b2a_hex(mode)
+                dev_list.append([mac,model,mode])           
+            
+        #print dev_list
+        for (mac, dev_type,mode) in dev_list:
+            #print mac  ,dev_type
+            if dev_type == 'L':
+                link_list.append(mac)
+            if dev_type == 'H'  or ord(dev_type) == ord('L') + 128:
+                #print int(binascii.b2a_hex(mode),16) 
+                if int(binascii.b2a_hex(mode),16) > 127 :
+                    bot_list.append([mac,"Turn On"])
+                    bot_list.append([mac,"Turn Off"])
+                else :
+                    bot_list.append([mac,"Press"])
+            if ord(dev_type) == ord('L') + 128:
+                enc_list.append([mac,"Press"])      
+        #print bot_list
+        print "scan timeout"
+        return bot_list
         pass
 
     def register_cb( self, fn ):
@@ -75,8 +100,9 @@ class DevScanner:
         #self.con.sendcontrol('c')
         self.con.close(force=True)
 
-def trigger_device(add):
-    print 'Start to control'
+def trigger_device(device):
+    [add,act] = device
+    #print 'Start to control'
     con = pexpect.spawn('gatttool -b ' + add + ' -t random -I')
     con.expect('\[LE\]>')
     print "Preparing to connect."
@@ -84,7 +110,13 @@ def trigger_device(add):
     #To compatible with different Bluez versions
     con.expect(['\[CON\]','Connection successful.*\[LE\]>'])
     print 'Write command'
-    con.sendline('char-write-cmd 0x0016 570100')
+    if act == "Turn On":
+        con.sendline('char-write-cmd 0x0016 570101')
+    elif act == "Turn Off":
+        con.sendline('char-write-cmd 0x0016 570102')
+    elif act == "Press":
+        con.sendline('char-write-cmd 0x0016 570100')
+        
     con.expect('\[LE\]>')
     con.sendline('quit')
     print 'Trigger complete'
@@ -101,19 +133,22 @@ def main():
     #Start scanning...
     scan = DevScanner()
     dev_list = scan.scan_loop()
+    
     if not dev_list:
         print("No SwitchBot nearby, exit")
         sys.exit()
-    for idx, val in enumerate(dev_list):
+    for idx, val in enumerate(dev_list): 
         print(idx, val)
     dev_number = int(input("Input the device number to control:"))
     if dev_number >= len(dev_list) :
         print("Input error, exit")
     bluetooth_adr = dev_list[dev_number]
- 
+    
     #Trigger the device to work
     #If the SwitchBot address is known you can run this command directly without scanning
+    
     trigger_device(bluetooth_adr)
+    
     sys.exit()
 
 if __name__ == "__main__":

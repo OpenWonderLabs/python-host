@@ -5,6 +5,8 @@
 
 This project aims to provide a super light-weight solution to control your SwitchBot on [Raspberry Pi](https://www.raspberrypi.org)/[OpenWRT](https://openwrt.org/) or any other Linux based board.
 
+The python-host distribution is supported and tested on Python 2.7.
+
 # How to Install?
 
 On Raspberry Pi.
@@ -15,9 +17,13 @@ You will need:
 
 Installation:
   -  Boot your fresh Pi and open a command prompt.
-  -  Install the python pexpect library.
+  -  Install the require library.
 ```sh
+sudo apt-get update
 sudo apt-get install python-pexpect
+sudo apt-get install libusb-dev libdbus-1-dev libglib2.0-dev 
+sudo apt-get install libudev-dev libical-dev libreadline-dev
+sudo pip install bluepy
 ```
   -  Clone this repo to the Pi.
 ```sh
@@ -32,4 +38,4 @@ sudo python switchbot.py
 
 Enjoy:)
 
-Share your words in our [community](http://community.switch-bot.com/).
+Share your words in our [community](http://www.switch-bot.com/forum).
