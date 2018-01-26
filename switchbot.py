@@ -126,6 +126,7 @@ def trigger_device(device):
 
 def main():
     #Check bluetooth dongle
+    print('Usage: python switchbot.py [device_index or bd_addr]')
     connect = pexpect.spawn('hciconfig')
     pnum = connect.expect(["hci0",pexpect.EOF,pexpect.TIMEOUT])
     if pnum!=0:
