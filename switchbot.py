@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # Copyright 2017-present WonderLabs, Inc. <support@wondertechlabs.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import pexpect
 import re
 import sys
@@ -164,4 +162,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
