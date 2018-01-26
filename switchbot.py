@@ -13,14 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pexpect
+import re
 import sys
 from bluepy.btle import Scanner, DefaultDelegate
 import binascii
 
-class ScanDelegate(DefaultDelegate): 
-    def __init__(self): 
+class ScanDelegate(DefaultDelegate):
+    def __init__(self):
         DefaultDelegate.__init__(self)
-        
+
 class DevScanner(DefaultDelegate):
     def __init__( self ):
         DefaultDelegate.__init__(self)
@@ -29,7 +30,7 @@ class DevScanner(DefaultDelegate):
     def dongle_start(self):
         self.con = pexpect.spawn('hciconfig hci0 up')
         time.sleep(1)
-        
+
     def dongle_restart(self):
         print "restart bluetooth dongle"
         self.con = pexpect.spawn('hciconfig hci0 down')
@@ -49,7 +50,7 @@ class DevScanner(DefaultDelegate):
         if pnum==0:
             self.con = pexpect.spawn('hcitool lescan')
             #self.con.expect('LE Scan ...', timeout=5)
-            scanner = Scanner().withDelegate(DevScanner()) 
+            scanner = Scanner().withDelegate(DevScanner())
             devices = scanner.scan(5.0)
             print "Start scanning..."
         else:
@@ -68,25 +69,25 @@ class DevScanner(DefaultDelegate):
                     mode  = 0
                 elif desc == 'Complete 128b Services' and value == service_uuid :
                     mac = dev.addr
-                    
+
             if mac != 0 :
                 #print binascii.b2a_hex(model),binascii.b2a_hex(mode)
-                dev_list.append([mac,model,mode])           
-            
+                dev_list.append([mac,model,mode])
+
         #print dev_list
         for (mac, dev_type,mode) in dev_list:
             #print mac  ,dev_type
             if dev_type == 'L':
                 link_list.append(mac)
             if dev_type == 'H'  or ord(dev_type) == ord('L') + 128:
-                #print int(binascii.b2a_hex(mode),16) 
+                #print int(binascii.b2a_hex(mode),16)
                 if int(binascii.b2a_hex(mode),16) > 127 :
                     bot_list.append([mac,"Turn On"])
                     bot_list.append([mac,"Turn Off"])
                 else :
                     bot_list.append([mac,"Press"])
             if ord(dev_type) == ord('L') + 128:
-                enc_list.append([mac,"Press"])      
+                enc_list.append([mac,"Press"])
         #print bot_list
         print "scan timeout"
         return bot_list
@@ -116,39 +117,47 @@ def trigger_device(device):
         con.sendline('char-write-cmd 0x0016 570102')
     elif act == "Press":
         con.sendline('char-write-cmd 0x0016 570100')
-        
+
     con.expect('\[LE\]>')
     con.sendline('quit')
     print 'Trigger complete'
 
 def main():
     #Check bluetooth dongle
+    print('Usage: python switchbot.py [device_index or bd_addr]')
     connect = pexpect.spawn('hciconfig')
     pnum = connect.expect(["hci0",pexpect.EOF,pexpect.TIMEOUT])
     if pnum!=0:
         print 'No bluetooth hardware, exit now'
         sys.exit()
     connect = pexpect.spawn('hciconfig hci0 up')
-    
+
     #Start scanning...
     scan = DevScanner()
     dev_list = scan.scan_loop()
-    
+    dev = sys.argv[1] if len(sys.argv) > 1 else None
+    dev_number = None
+
     if not dev_list:
         print("No SwitchBot nearby, exit")
         sys.exit()
-    for idx, val in enumerate(dev_list): 
+    for idx, val in enumerate(dev_list):
         print(idx, val)
-    dev_number = int(input("Input the device number to control:"))
+        if dev and ((re.match('^\d+', dev) and idx == int(dev)) or val[0] == dev):
+            dev_number = idx
+
+    if dev_number is None:
+        dev_number = int(input("Input the device number to control:"))
+
     if dev_number >= len(dev_list) :
         print("Input error, exit")
     bluetooth_adr = dev_list[dev_number]
-    
+
     #Trigger the device to work
     #If the SwitchBot address is known you can run this command directly without scanning
-    
+
     trigger_device(bluetooth_adr)
-    
+
     sys.exit()
 
 if __name__ == "__main__":
