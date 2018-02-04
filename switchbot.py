@@ -139,7 +139,10 @@ def main():
         sys.exit()
     for idx, val in enumerate(dev_list): 
         print(idx, val)
-    dev_number = int(input("Input the device number to control:"))
+    if len(sys.argv) == 2:
+        dev_number = int(sys.argv[1])
+    else:
+        dev_number = int(input("Input the device number to control:"))
     if dev_number >= len(dev_list) :
         print("Input error, exit")
     bluetooth_adr = dev_list[dev_number]
