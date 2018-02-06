@@ -1,7 +1,7 @@
 # python-host
 
 # What is the SwitchBot opensource project?
-[SwitchBot](https://www.switch-bot.com) is a smart IoT robot to mechanically control all your switches and buttons. You can control the bot by your smartphone app ([iOS](https://itunes.apple.com/app/switchbot/id1087374760?mt=8) or  [Android](https://play.google.com/store/apps/details?id=com.theswitchbot.switchbot), SwitchLink, or other platform based on our open APIs.
+[SwitchBot](https://www.switch-bot.com) is a smart IoT robot to mechanically control all your switches and buttons. You can control the bot by your smartphone app ([iOS](https://itunes.apple.com/app/SwitchBot/id1087374760?mt=8) or  [Android](https://play.google.com/store/apps/details?id=com.theSwitchBot.SwitchBot), SwitchLink, or other platform based on our open APIs.
 
 This project aims to provide a super light-weight solution to control your SwitchBot on [Raspberry Pi](https://www.raspberrypi.org)/[OpenWRT](https://openwrt.org/) or any other Linux based board.
 
@@ -32,10 +32,26 @@ git clone https://github.com/OpenWonderLabs/python-host.git
   -  run the python code.
 ```sh
 cd python-host
+```
+You can use in two ways:
+
+1. Scan and control by device name.
+```
 sudo python switchbot.py
 ```
-  -  Follow instructions to input the device number you want to control....
+  -  Follow the instruction, input the device number for SwitchBot you want to control.
 
-Enjoy:)
+2. Control SwitchBot by MAC address. (MAC address should be retrived in advanced)
+```
+sudo python switchbot.py [mac_addr action_cmd]
+```
+action_cmd :Press, Turn On, Turn Off.
+```
+eg: sudo python switchbot.py  xx:xx:xx:xx:xx:xx Press
+```
+Enjoy :)
+
+# Thanks to contributors:
+BlackLight
 
 Share your words in our [community](http://www.switch-bot.com/forum).

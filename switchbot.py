@@ -109,45 +109,62 @@ def trigger_device(device):
     con.sendline('connect')
     #To compatible with different Bluez versions
     con.expect(['\[CON\]','Connection successful.*\[LE\]>'])
-    print 'Write command'
+    con.sendline('char-desc')
+    con.expect(['\[CON\]','cba20002-224d-11e6-9fb8-0002a5d5c51b'])
+    cmd_handle = con.before.split('\n')[-1].split()[2].strip(',')
     if act == "Turn On":
-        con.sendline('char-write-cmd 0x0016 570101')
+        con.sendline('char-write-cmd ' + cmd_handle + ' 570101')
     elif act == "Turn Off":
-        con.sendline('char-write-cmd 0x0016 570102')
+        con.sendline('char-write-cmd ' + cmd_handle + ' 570102')
     elif act == "Press":
-        con.sendline('char-write-cmd 0x0016 570100')
-        
+        con.sendline('char-write-cmd ' + cmd_handle + ' 570100')
     con.expect('\[LE\]>')
     con.sendline('quit')
     print 'Trigger complete'
 
 def main():
     #Check bluetooth dongle
+    print('Usage: "sudo python switchbot.py [mac_addr  cmd]" or "sudo python switchbot.py"')
     connect = pexpect.spawn('hciconfig')
     pnum = connect.expect(["hci0",pexpect.EOF,pexpect.TIMEOUT])
     if pnum!=0:
         print 'No bluetooth hardware, exit now'
         sys.exit()
     connect = pexpect.spawn('hciconfig hci0 up')
-    
-    #Start scanning...
-    scan = DevScanner()
-    dev_list = scan.scan_loop()
-    
-    if not dev_list:
-        print("No SwitchBot nearby, exit")
-        sys.exit()
-    for idx, val in enumerate(dev_list): 
-        print(idx, val)
-    dev_number = int(input("Input the device number to control:"))
-    if dev_number >= len(dev_list) :
-        print("Input error, exit")
-    bluetooth_adr = dev_list[dev_number]
-    
-    #Trigger the device to work
-    #If the SwitchBot address is known you can run this command directly without scanning
-    
-    trigger_device(bluetooth_adr)
+
+    if len(sys.argv) == 3 or len(sys.argv) == 4: 
+	dev = sys.argv[1]
+        act = sys.argv[2] if len(sys.argv) < 4  else  ('Turn ' + sys.argv[3] )
+        trigger_device([dev,act])
+
+    elif len(sys.argv) == 1:
+    	#Start scanning...
+    	scan = DevScanner()
+    	dev_list = scan.scan_loop()
+    	dev = sys.argv[1] if len(sys.argv) > 1 else None
+    	dev_number = None
+
+    	if not dev_list:
+    	    print("No SwitchBot nearby, exit")
+    	    sys.exit()
+    	for idx, val in enumerate(dev_list):
+    	    print(idx, val)
+
+    	dev_number = int(input("Input the device number to control:"))
+
+    	if dev_number >= len(dev_list) :
+    	    print("Input error, exit")
+    	bluetooth_adr = dev_list[dev_number]
+
+    	#Trigger the device to work
+    	#If the SwitchBot address is known you can run this command directly without scanning
+
+    	trigger_device(bluetooth_adr)
+    else :
+	print 'wrong cmd.'
+    	print('Usage: "sudo python switchbot.py [mac_addr  cmd]" or "sudo python switchbot.py"')
+
+    connect = pexpect.spawn('hciconfig')
     
     sys.exit()
 
