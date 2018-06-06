@@ -15,32 +15,12 @@ class Scanner(object):
         self.timeout_secs = timeout_secs if timeout_secs else 2
 
 
-    @classmethod
-    def _get_uuids(cls, device):
-        uuids = set()
-
-        for id in device['uuids']:
-            if isinstance(id, tuple):
-                uuid = ''
-                for i in range(0, len(id)):
-                    token = struct.pack('<I', id[i])
-                    for byte in token:
-                        uuid += hex(byte)[2:].zfill(2)
-                    uuid += ('-' if i < len(id)-1 else '')
-                uuids.add(uuid)
-            else:
-                uuids.add(hex(id)[2:])
-
-        return uuids
-
-
     def scan(self):
         service = DiscoveryService(self.bt_interface) \
             if self.bt_interface else DiscoveryService()
 
         devices = service.discover(self.timeout_secs)
-        return sorted([addr for addr, device in devices.items()
-                if self.service_uuid in self._get_uuids(device)])
+        return list(devices.keys())
 
 
 
@@ -73,9 +53,7 @@ class Driver(object):
                                    .format(self.device, self.timeout_secs))
 
     def run_command(self, command):
-        self.req.write_by_handle(self.handle, self.commands[command])
-        data = self.req.read_by_handle(self.handle)
-        return data
+        return self.req.write_by_handle(self.handle, self.commands[command])
 
 
 def main():
@@ -83,7 +61,8 @@ def main():
     parser.add_argument('--scan', '-s', dest='scan', required=False, default=False, action='store_true',
                         help="Run Switchbot in scan mode - scan devices to control")
 
-    parser.add_argument('--scan-timeout', dest='scan_timeout', required=False, default=None,
+    parser.add_argument('--scan-timeout', dest='scan_timeout', type=int,
+                        required=False, default=None,
                         help="Device scan timeout (default: 2 seconds)")
 
     parser.add_argument('--connect-timeout', dest='connect_timeout', required=False, default=None,
