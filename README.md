@@ -49,6 +49,35 @@ action_cmd :Press, Turn On, Turn Off.
 ```
 eg: sudo python switchbot.py  xx:xx:xx:xx:xx:xx Press
 ```
+
+3. Python 3 and new bluetooth stack support
+
+The original `switchbot.py` script will work only on Python 2 and it relies on the old Bluez utils (like `hciconfig` and `hcitool`) that have been deprecated in the latest Bluez releases.
+
+If you want to use the script on Python 3 or on a Linux distro that no longer ships Bluez with the old tools, use the switchbot_py3.py script instead.
+
+To install the required dependencies on Ubuntu/Debian/Raspbian:
+
+```shell
+apt-get install python3-pip
+pip3 install pybluez
+apt-get install libboost-python-dev
+apt-get install libboost-thread-dev
+pip3 install gattlib
+```
+
+If for some reason the gattlib installation fails:
+
+```shell
+pip3 download gattlib
+tar xvzf ./gattlib-0.20150805.tar.gz
+cd gattlib-0.20150805/
+sed -ie 's/boost_python-py34/boost_python-py35/' setup.py
+pip3 install .
+```
+
+Type `python3 switchbot_py3.py --help` for usage tips.
+
 Enjoy :)
 
 # Thanks to contributors:
