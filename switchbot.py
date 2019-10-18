@@ -17,10 +17,10 @@ import sys
 from bluepy.btle import Scanner, DefaultDelegate
 import binascii
 
-class ScanDelegate(DefaultDelegate): 
-    def __init__(self): 
+class ScanDelegate(DefaultDelegate):
+    def __init__(self):
         DefaultDelegate.__init__(self)
-        
+
 class DevScanner(DefaultDelegate):
     def __init__( self ):
         DefaultDelegate.__init__(self)
@@ -29,7 +29,7 @@ class DevScanner(DefaultDelegate):
     def dongle_start(self):
         self.con = pexpect.spawn('hciconfig hci0 up')
         time.sleep(1)
-        
+
     def dongle_restart(self):
         print "restart bluetooth dongle"
         self.con = pexpect.spawn('hciconfig hci0 down')
@@ -49,7 +49,7 @@ class DevScanner(DefaultDelegate):
         if pnum==0:
             self.con = pexpect.spawn('hcitool lescan')
             #self.con.expect('LE Scan ...', timeout=5)
-            scanner = Scanner().withDelegate(DevScanner()) 
+            scanner = Scanner().withDelegate(DevScanner())
             devices = scanner.scan(5.0)
             print "Start scanning..."
         else:
@@ -68,25 +68,27 @@ class DevScanner(DefaultDelegate):
                     mode  = 0
                 elif desc == 'Complete 128b Services' and value == service_uuid :
                     mac = dev.addr
-                    
+
             if mac != 0 :
                 #print binascii.b2a_hex(model),binascii.b2a_hex(mode)
-                dev_list.append([mac,model,mode])           
-            
+                dev_list.append([mac,model,mode])
+
         #print dev_list
         for (mac, dev_type,mode) in dev_list:
             #print mac  ,dev_type
             if dev_type == 'L':
                 link_list.append(mac)
             if dev_type == 'H'  or ord(dev_type) == ord('L') + 128:
-                #print int(binascii.b2a_hex(mode),16) 
+                #print int(binascii.b2a_hex(mode),16)
                 if int(binascii.b2a_hex(mode),16) > 127 :
                     bot_list.append([mac,"Turn On"])
                     bot_list.append([mac,"Turn Off"])
+                    bot_list.append([mac,"Up"])
+                    bot_list.append([mac,"Down"])
                 else :
                     bot_list.append([mac,"Press"])
             if ord(dev_type) == ord('L') + 128:
-                enc_list.append([mac,"Press"])      
+                enc_list.append([mac,"Press"])
         #print bot_list
         print "scan timeout"
         return bot_list
@@ -118,6 +120,10 @@ def trigger_device(device):
         con.sendline('char-write-cmd ' + cmd_handle + ' 570102')
     elif act == "Press":
         con.sendline('char-write-cmd ' + cmd_handle + ' 570100')
+    elif act == "Down":
+        con.sendline('char-write-cmd ' + cmd_handle + ' 570103')
+    elif act == "Up":
+        con.sendline('char-write-cmd ' + cmd_handle + ' 570104')
     con.expect('\[LE\]>')
     con.sendline('quit')
     print 'Trigger complete'
@@ -132,7 +138,7 @@ def main():
         sys.exit()
     connect = pexpect.spawn('hciconfig hci0 up')
 
-    if len(sys.argv) == 3 or len(sys.argv) == 4: 
+    if len(sys.argv) == 3 or len(sys.argv) == 4:
 	dev = sys.argv[1]
         act = sys.argv[2] if len(sys.argv) < 4  else  ('Turn ' + sys.argv[3] )
         trigger_device([dev,act])
@@ -165,7 +171,7 @@ def main():
     	print('Usage: "sudo python switchbot.py [mac_addr  cmd]" or "sudo python switchbot.py"')
 
     connect = pexpect.spawn('hciconfig')
-    
+
     sys.exit()
 
 if __name__ == "__main__":
