@@ -84,6 +84,8 @@ Type `python3 switchbot_py3.py --help` for usage tips.
 Enjoy :)
 
 # Thanks to contributors:
-BlackLight
+[@BlackLight](https://github.com/BlackLight)
+[@rcmdnk](https://github.com/rcmdnk)
+[@tony-wallace](https://github.com/tony-wallace)
 
 Share your words in our [community](http://www.switch-bot.com/forum).
