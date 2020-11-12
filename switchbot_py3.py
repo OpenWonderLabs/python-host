@@ -48,8 +48,7 @@ def connect(device: str, bt_interface: str, timeout: float):
     while not req.is_connected():
         if time.time() - connect_start_time >= timeout:
             raise ConnectionError('Connection to {} timed out after {} seconds'.
-                    format(device, timeout))
-
+                                  format(device, timeout))
         time.sleep(0.1)
 
     yield req
@@ -57,13 +56,14 @@ def connect(device: str, bt_interface: str, timeout: float):
     if req.is_connected():
         req.disconnect()
 
+
 class Scanner(object):
     service_uuid = 'cba20002-224d-11e6-9fb8-0002a5d5c51b'
     _default_scan_timeout = 8
     _default_connect_timeout = 2.0
 
     def __init__(self, bt_interface: str = None, scan_timeout: int = None,
-            connect_timeout: float = None):
+                 connect_timeout: float = None):
         self.bt_interface = bt_interface
         self.connect_timeout = connect_timeout or self._default_connect_timeout
         self.scan_timeout = scan_timeout or self._default_scan_timeout
@@ -75,7 +75,7 @@ class Scanner(object):
                 for chrc in req.discover_characteristics():
                     if chrc.get('uuid') == cls.service_uuid:
                         print(' * Found Switchbot service on device {} handle {}'.
-                                format( device, chrc.get('value_handle')))
+                              format(device, chrc.get('value_handle')))
                         return True
         except ConnectionError:
             return False
@@ -94,11 +94,19 @@ class Scanner(object):
 
 
 class Driver(object):
-    handle = 0x16
+    handles = {
+        'press': 0x16,
+        'on': 0x16,
+        'off': 0x16,
+        'open': 0x0D,
+        'close': 0x0D,
+    }
     commands = {
-        'press' : '\x57\x01\x00',
-        'on'    : '\x57\x01\x01',
-        'off'   : '\x57\x01\x02',
+        'press': b'\x57\x01\x00',
+        'on': b'\x57\x01\x01',
+        'off': b'\x57\x01\x02',
+        'open': b'\x57\x0F\x45\x01\x05\xFF\x00',
+        'close': b'\x57\x0F\x45\x01\x05\xFF\x64',
     }
 
     def __init__(self, device, bt_interface=None, timeout_secs=None):
@@ -109,29 +117,32 @@ class Driver(object):
     def run_command(self, command):
         with connect(self.device, self.bt_interface, self.timeout_secs) as req:
             print('Connected!')
-            return req.write_by_handle(self.handle, self.commands[command])
+            return req.write_by_handle(self.handles[command], self.commands[command])
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--scan', '-s', dest='scan', required=False, default=False, action='store_true',
+
+    parser.add_argument('-s', '--scan', dest='scan', required=False, default=False, action='store_true',
                         help="Run Switchbot in scan mode - scan devices to control")
 
-    parser.add_argument('--scan-timeout', dest='scan_timeout', type=int,
-                        required=False, default=None,
-                        help="Device scan timeout (default: 2 seconds)")
-
-    parser.add_argument('--connect-timeout', dest='connect_timeout', required=False, default=None,
-                        help="Device connection timeout (default: 5 seconds)")
-
-    parser.add_argument('--device', '-d', dest='device', required=False, default=None,
+    parser.add_argument('-d', '--device', dest='device', required=False, default=None,
                         help="Specify the address of a device to control")
 
-    parser.add_argument('--interface', '-i', dest='interface', required=False, default=None,
-                        help="Name of the bluetooth adapter (default: hci0 or whichever is the default)")
+    parser.add_argument('-c', '--command',  dest='command', required=False, default='press',
+                        choices=['press', 'on', 'off', 'open', 'close'], 
+                        help="Command to be sent to device. \
+                            Noted that press/on/off for Bot and open/close for Curtain. \
+                            Required if the controlled device is Curtain (default: %(default)s)")
 
-    parser.add_argument('--command', '-c', dest='command', required=False, default='press',
-                        choices=['press', 'on', 'off'], help="Command to be sent to device (default: press)")
+    parser.add_argument('-i', '--interface',  dest='interface', required=False, default='hci0',
+                        help="Name of the bluetooth adapter (default: %(default)s)")
+
+    parser.add_argument('--scan-timeout', dest='scan_timeout', type=int, required=False, default=2,
+                        help="Device scan timeout (default: %(default)s second(s))")
+
+    parser.add_argument('--connect-timeout', dest='connect_timeout', type=int, required=False, default=5,
+                        help="Device connection timeout (default: %(default)s second(s))")
 
     opts, args = parser.parse_known_args(sys.argv[1:])
 
