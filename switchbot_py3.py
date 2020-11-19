@@ -100,6 +100,7 @@ class Driver(object):
         'off': 0x16,
         'open': 0x0D,
         'close': 0x0D,
+        'pause': 0x0D,
     }
     commands = {
         'press': b'\x57\x01\x00',
@@ -107,6 +108,7 @@ class Driver(object):
         'off': b'\x57\x01\x02',
         'open': b'\x57\x0F\x45\x01\x05\xFF\x00',
         'close': b'\x57\x0F\x45\x01\x05\xFF\x64',
+        'pause': b'\x57\x0F\x45\x01\x00\xFF',
     }
 
     def __init__(self, device, bt_interface=None, timeout_secs=None):
@@ -130,7 +132,7 @@ def main():
                         help="Specify the address of a device to control")
 
     parser.add_argument('-c', '--command',  dest='command', required=False, default='press',
-                        choices=['press', 'on', 'off', 'open', 'close'], 
+                        choices=['press', 'on', 'off', 'open', 'close', 'pause'], 
                         help="Command to be sent to device. \
                             Noted that press/on/off for Bot and open/close for Curtain. \
                             Required if the controlled device is Curtain (default: %(default)s)")
