@@ -124,6 +124,12 @@ def trigger_device(device):
         con.sendline('char-write-cmd ' + cmd_handle + ' 570103')
     elif act == "Up":
         con.sendline('char-write-cmd ' + cmd_handle + ' 570104')
+    elif act == "Open":
+        con.sendline('char-write-cmd ' + cmd_handle + ' 570F450105FF00')
+    elif act == "Close":
+        con.sendline('char-write-cmd ' + cmd_handle + ' 570F450105FF64')
+    elif act == "Pause":
+        con.sendline('char-write-cmd ' + cmd_handle + ' 570F450105FF')
     con.expect('\[LE\]>')
     con.sendline('quit')
     print 'Trigger complete'
