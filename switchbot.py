@@ -90,20 +90,26 @@ class DevScanner(DefaultDelegate):
                             int(value[14:16].encode('utf-8'), 16) % 128)
                         # print('meter:', param1, param2)
                     elif type == 'd':
-                        print(adtype, desc, value)
+                        # print(adtype, desc, value)
                         pirSta = (
                             int(value[6:7].encode('utf-8'), 16) >> 2) & 0x01
-                        # TODO: 
+                        # TODO:
                         # diffSec = (
                         #     int(value[10:11].encode('utf-8'), 16) >> 2) & 0x02
                         diffSec = 0
                         hallSta = (
-                            int(value[11:12].encode('utf-8'), 16) >> 1) & 0x02
+                            int(value[11:12].encode('utf-8'), 16) >> 1) & 0x03
                         lightSta = int(value[11:12].encode('utf-8'), 16) & 0x01
                         param_list.extend([hallSta, pirSta, lightSta, diffSec])
                         # print(pirSta, diffSec, hallSta, lightSta)
                     elif type == 's':
-                        param_list[:] = []
+                        print(adtype, desc, value)
+                        pirSta = (
+                            int(value[6:7].encode('utf-8'), 16) >> 2) & 0x01
+                        lightSta = (int(value[13:14].encode('utf-8'), 16) & 0x03) - 1
+                        # TODO:
+                        diffSec = 0
+                        param_list.extend([pirSta, lightSta, diffSec])
                     else:
                         param_list[:] = []
                 elif desc == 'Local name':
@@ -156,8 +162,8 @@ class DevScanner(DefaultDelegate):
                 contact_list.append([mac, 'Contact', "%s, %s, %s" %
                                      (hall_tip[params[0]], pir_tip[params[1]], light_tip[params[2]])])
             elif type == 's':
-                motion_list.append([mac, 'Motion', "%.1f'C %d%%" %
-                                    (params[0], params[1])])
+                motion_list.append([mac, 'Motion', "%s, %s" %
+                                    (pir_tip[params[0]], light_tip[params[1]])])
         # print(bot_list)
         print('Scan timeout.')
         return bot_list + meter_list + curtain_list + contact_list + motion_list
