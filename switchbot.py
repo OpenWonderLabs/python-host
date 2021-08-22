@@ -16,6 +16,8 @@ import pexpect
 import sys
 from bluepy.btle import Scanner, DefaultDelegate
 import binascii
+import copy
+import datetime
 
 
 class ScanDelegate(DefaultDelegate):
@@ -26,7 +28,7 @@ class ScanDelegate(DefaultDelegate):
 class DevScanner(DefaultDelegate):
     def __init__(self):
         DefaultDelegate.__init__(self)
-        #print('Scanner inited')
+        # print('Scanner inited')
 
     def dongle_start(self):
         self.con = pexpect.spawn('hciconfig hci0 up')
@@ -41,30 +43,40 @@ class DevScanner(DefaultDelegate):
 
     def scan_loop(self):
         service_uuid = 'cba20d00-224d-11e6-9fb8-0002a5d5c51b'
+        company_id = '6909'  # actually 0x0969
         dev_list = []
         bot_list = []
         meter_list = []
         curtain_list = []
+        contact_list = []
+        motion_list = []
+        param_list = []
+
+        pir_tip = ['No movement detected', 'Movement detected']
+        hall_tip = ['Door closed', 'Door opened', 'Timeout no closed']
+        light_tip = ['Dark', 'Bright']
+
         self.con = pexpect.spawn('hciconfig')
         pnum = self.con.expect(['hci0', pexpect.EOF, pexpect.TIMEOUT])
         if pnum == 0:
             self.con = pexpect.spawn('hcitool lescan')
-            #self.con.expect('LE Scan ...', timeout=5)
+            # self.con.expect('LE Scan ...', timeout=5)
             scanner = Scanner().withDelegate(DevScanner())
-            devices = scanner.scan(10.0)
+            devices = scanner.scan(5.0)
             print('Scanning...')
         else:
             raise Error('no bluetooth error')
 
         for dev in devices:
             mac = 0
+            param_list[:] = []
             for (adtype, desc, value) in dev.getScanData():
-                # print(adtype,desc,value)
+                # print(adtype, desc, value)
                 if desc == '16b Service Data':
-                    model = binascii.a2b_hex(value[4:6])
-                    mode = binascii.a2b_hex(value[6:8])
-                    if len(value) == 16:
-                        # print(adtype,desc,value,len(value))
+                    type = binascii.a2b_hex(value[4:6])
+                    if type == 'H':
+                        param_list.append(binascii.a2b_hex(value[6:8]))
+                    elif type == 'T':
                         # celsius
                         tempFra = int(value[11:12].encode('utf-8'), 16) / 10.0
                         tempInt = int(value[12:14].encode('utf-8'), 16)
@@ -73,54 +85,82 @@ class DevScanner(DefaultDelegate):
                             tempFra *= -1
                         else:
                             tempInt -= 128
-                        meterTemp = tempInt + tempFra
-                        meterHumi = int(value[14:16].encode('utf-8'), 16) % 128
-                        # print('meter:', meterTemp, meterHumi)
+                        param_list.append(tempInt + tempFra)
+                        param_list.append(
+                            int(value[14:16].encode('utf-8'), 16) % 128)
+                        # print('meter:', param1, param2)
+                    elif type == 'd':
+                        print(adtype, desc, value)
+                        pirSta = (
+                            int(value[6:7].encode('utf-8'), 16) >> 2) & 0x01
+                        # TODO: 
+                        # diffSec = (
+                        #     int(value[10:11].encode('utf-8'), 16) >> 2) & 0x02
+                        diffSec = 0
+                        hallSta = (
+                            int(value[11:12].encode('utf-8'), 16) >> 1) & 0x02
+                        lightSta = int(value[11:12].encode('utf-8'), 16) & 0x01
+                        param_list.extend([hallSta, pirSta, lightSta, diffSec])
+                        # print(pirSta, diffSec, hallSta, lightSta)
+                    elif type == 's':
+                        param_list[:] = []
                     else:
-                        meterTemp = 0
-                        meterHumi = 0
+                        param_list[:] = []
                 elif desc == 'Local name':
                     if value == 'WoHand':
                         mac = dev.addr
-                        model = 'H'
-                        mode = 0
+                        type = 'H'
                     elif value == 'WoMeter':
                         mac = dev.addr
-                        model = 'T'
-                        mode = 0
+                        type = 'T'
                     elif value == 'WoCurtain':
                         mac = dev.addr
-                        model = 'c'
-                        mode = 0
+                        type = 'c'
+                    elif value == 'WoContact':
+                        mac = dev.addr
+                        type = 'd'
+                    elif value == 'WoMotion':
+                        mac = dev.addr
+                        type = 's'
                 elif desc == 'Complete 128b Services' and value == service_uuid:
+                    mac = dev.addr
+                elif desc == 'Manufacturer' and value[0:4] == company_id:
                     mac = dev.addr
 
             if mac != 0:
-                # print binascii.b2a_hex(model),binascii.b2a_hex(mode)
-                dev_list.append([mac, model, mode, meterTemp, meterHumi])
+                dev_list.append([mac, type, copy.deepcopy(param_list)])
 
         # print dev_list
-        for (mac, dev_type, mode, meterTemp, meterHumi) in dev_list:
-            # print mac,dev_type
-            if dev_type == 'H':
-                # print int(binascii.b2a_hex(mode),16)
-                if int(binascii.b2a_hex(mode), 16) > 127:
+        for (mac, type, params) in dev_list:
+            # print mac,type
+            if type == 'H':
+                if int(binascii.b2a_hex(params[0]), 16) > 127:
                     bot_list.append([mac, 'Bot', 'Turn On'])
                     bot_list.append([mac, 'Bot', 'Turn Off'])
                     bot_list.append([mac, 'Bot', 'Up'])
                     bot_list.append([mac, 'Bot', 'Down'])
                 else:
                     bot_list.append([mac, 'Bot', 'Press'])
-            elif dev_type == 'T':
+            elif type == 'T':
                 meter_list.append([mac, 'Meter', "%.1f'C %d%%" %
-                                  (meterTemp, meterHumi)])
-            elif dev_type == 'c':
-                meter_list.append([mac, 'Curtain', 'Open'])
-                meter_list.append([mac, 'Curtain', 'Close'])
-                meter_list.append([mac, 'Curtain', 'Pause'])
+                                  (params[0], params[1])])
+            elif type == 'c':
+                curtain_list.append([mac, 'Curtain', 'Open'])
+                curtain_list.append([mac, 'Curtain', 'Close'])
+                curtain_list.append([mac, 'Curtain', 'Pause'])
+            elif type == 'd':
+                # TODO:
+                # timeTirgger = datetime.datetime.now() + datetime.timedelta(0, params[3])
+                # contact_list.append([mac, 'Contact', "%s, %s, %s, Last trigger: %s" %
+                #                      (hall_tip[params[0]], pir_tip[params[1]], light_tip[params[2]], timeTirgger.strftime("%Y-%m-%d %H:%M"))])
+                contact_list.append([mac, 'Contact', "%s, %s, %s" %
+                                     (hall_tip[params[0]], pir_tip[params[1]], light_tip[params[2]])])
+            elif type == 's':
+                motion_list.append([mac, 'Motion', "%.1f'C %d%%" %
+                                    (params[0], params[1])])
         # print(bot_list)
         print('Scan timeout.')
-        return bot_list + meter_list
+        return bot_list + meter_list + curtain_list + contact_list + motion_list
         pass
 
     def register_cb(self, fn):
@@ -178,9 +218,9 @@ def trigger_device(device):
                 tempFra *= -1
             else:
                 tempInt -= 128
-            meterTemp = tempInt + tempFra
-            meterHumi = int(data[6:8], 16) % 128
-            print("Meter[%s] %.1f'C %d%%" % (mac, meterTemp, meterHumi))
+            param1 = tempInt + tempFra
+            param2 = int(data[6:8], 16) % 128
+            print("Meter[%s] %.1f'C %d%%" % (mac, param1, param2))
         else:
             print('Error!')
     elif type == 'Curtain':
