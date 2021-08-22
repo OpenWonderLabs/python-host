@@ -62,7 +62,7 @@ class DevScanner(DefaultDelegate):
             self.con = pexpect.spawn('hcitool lescan')
             # self.con.expect('LE Scan ...', timeout=5)
             scanner = Scanner().withDelegate(DevScanner())
-            devices = scanner.scan(5.0)
+            devices = scanner.scan(10.0)
             print('Scanning...')
         else:
             raise Error('no bluetooth error')
@@ -73,10 +73,10 @@ class DevScanner(DefaultDelegate):
             for (adtype, desc, value) in dev.getScanData():
                 # print(adtype, desc, value)
                 if desc == '16b Service Data':
-                    type = binascii.a2b_hex(value[4:6])
-                    if type == 'H':
+                    dev_type = binascii.a2b_hex(value[4:6])
+                    if dev_type == 'H':
                         param_list.append(binascii.a2b_hex(value[6:8]))
-                    elif type == 'T':
+                    elif dev_type == 'T':
                         # celsius
                         tempFra = int(value[11:12].encode('utf-8'), 16) / 10.0
                         tempInt = int(value[12:14].encode('utf-8'), 16)
@@ -89,7 +89,7 @@ class DevScanner(DefaultDelegate):
                         param_list.append(
                             int(value[14:16].encode('utf-8'), 16) % 128)
                         # print('meter:', param1, param2)
-                    elif type == 'd':
+                    elif dev_type == 'd':
                         # print(adtype, desc, value)
                         pirSta = (
                             int(value[6:7].encode('utf-8'), 16) >> 2) & 0x01
@@ -102,8 +102,8 @@ class DevScanner(DefaultDelegate):
                         lightSta = int(value[11:12].encode('utf-8'), 16) & 0x01
                         param_list.extend([hallSta, pirSta, lightSta, diffSec])
                         # print(pirSta, diffSec, hallSta, lightSta)
-                    elif type == 's':
-                        print(adtype, desc, value)
+                    elif dev_type == 's':
+                        # print(adtype, desc, value)
                         pirSta = (
                             int(value[6:7].encode('utf-8'), 16) >> 2) & 0x01
                         lightSta = (int(value[13:14].encode('utf-8'), 16) & 0x03) - 1
@@ -115,31 +115,30 @@ class DevScanner(DefaultDelegate):
                 elif desc == 'Local name':
                     if value == 'WoHand':
                         mac = dev.addr
-                        type = 'H'
+                        dev_type = 'H'
                     elif value == 'WoMeter':
                         mac = dev.addr
-                        type = 'T'
+                        dev_type = 'T'
                     elif value == 'WoCurtain':
                         mac = dev.addr
-                        type = 'c'
+                        dev_type = 'c'
                     elif value == 'WoContact':
                         mac = dev.addr
-                        type = 'd'
+                        dev_type = 'd'
                     elif value == 'WoMotion':
                         mac = dev.addr
-                        type = 's'
+                        dev_type = 's'
                 elif desc == 'Complete 128b Services' and value == service_uuid:
                     mac = dev.addr
                 elif desc == 'Manufacturer' and value[0:4] == company_id:
                     mac = dev.addr
 
             if mac != 0:
-                dev_list.append([mac, type, copy.deepcopy(param_list)])
+                dev_list.append([mac, dev_type, copy.deepcopy(param_list)])
 
-        # print dev_list
-        for (mac, type, params) in dev_list:
-            # print mac,type
-            if type == 'H':
+        # print(dev_list)
+        for (mac, dev_type, params) in dev_list:
+            if dev_type == 'H':
                 if int(binascii.b2a_hex(params[0]), 16) > 127:
                     bot_list.append([mac, 'Bot', 'Turn On'])
                     bot_list.append([mac, 'Bot', 'Turn Off'])
@@ -147,24 +146,23 @@ class DevScanner(DefaultDelegate):
                     bot_list.append([mac, 'Bot', 'Down'])
                 else:
                     bot_list.append([mac, 'Bot', 'Press'])
-            elif type == 'T':
+            elif dev_type == 'T':
                 meter_list.append([mac, 'Meter', "%.1f'C %d%%" %
                                   (params[0], params[1])])
-            elif type == 'c':
+            elif dev_type == 'c':
                 curtain_list.append([mac, 'Curtain', 'Open'])
                 curtain_list.append([mac, 'Curtain', 'Close'])
                 curtain_list.append([mac, 'Curtain', 'Pause'])
-            elif type == 'd':
+            elif dev_type == 'd':
                 # TODO:
                 # timeTirgger = datetime.datetime.now() + datetime.timedelta(0, params[3])
                 # contact_list.append([mac, 'Contact', "%s, %s, %s, Last trigger: %s" %
                 #                      (hall_tip[params[0]], pir_tip[params[1]], light_tip[params[2]], timeTirgger.strftime("%Y-%m-%d %H:%M"))])
                 contact_list.append([mac, 'Contact', "%s, %s, %s" %
                                      (hall_tip[params[0]], pir_tip[params[1]], light_tip[params[2]])])
-            elif type == 's':
+            elif dev_type == 's':
                 motion_list.append([mac, 'Motion', "%s, %s" %
                                     (pir_tip[params[0]], light_tip[params[1]])])
-        # print(bot_list)
         print('Scan timeout.')
         return bot_list + meter_list + curtain_list + contact_list + motion_list
         pass
@@ -179,7 +177,7 @@ class DevScanner(DefaultDelegate):
 
 
 def trigger_device(device):
-    [mac, type, act] = device
+    [mac, dev_type, act] = device
     # print 'Start to control'
     con = pexpect.spawn('gatttool -b ' + mac + ' -t random -I')
     con.expect('\[LE\]>')
@@ -199,7 +197,7 @@ def trigger_device(device):
     con.sendline('char-desc')
     con.expect(['\[CON\]', 'cba20002-224d-11e6-9fb8-0002a5d5c51b'])
     cmd_handle = con.before.split('\n')[-1].split()[2].strip(',')
-    if type == 'Bot':
+    if dev_type == 'Bot':
         if act == 'Turn On':
             con.sendline('char-write-cmd ' + cmd_handle + ' 570101')
         elif act == 'Turn Off':
@@ -210,7 +208,7 @@ def trigger_device(device):
             con.sendline('char-write-cmd ' + cmd_handle + ' 570103')
         elif act == 'Up':
             con.sendline('char-write-cmd ' + cmd_handle + ' 570104')
-    elif type == 'Meter':
+    elif dev_type == 'Meter':
         con.sendline('char-write-cmd ' + cmd_handle + ' 570F31')
         con.expect('\[LE\]>')
         con.sendline('char-read-uuid cba20003-224d-11e6-9fb8-0002a5d5c51b')
@@ -224,12 +222,12 @@ def trigger_device(device):
                 tempFra *= -1
             else:
                 tempInt -= 128
-            param1 = tempInt + tempFra
-            param2 = int(data[6:8], 16) % 128
-            print("Meter[%s] %.1f'C %d%%" % (mac, param1, param2))
+            meterTemp = tempInt + tempFra
+            meterHumi = int(data[6:8], 16) % 128
+            print("Meter[%s] %.1f'C %d%%" % (mac, meterTemp, meterHumi))
         else:
             print('Error!')
-    elif type == 'Curtain':
+    elif dev_type == 'Curtain':
         if act == 'Open':
             con.sendline('char-write-cmd ' + cmd_handle + ' 570F450105FF00')
         elif act == 'Close':
@@ -246,7 +244,7 @@ def trigger_device(device):
 def main():
     # Check bluetooth dongle
     print(
-        'Usage: "sudo python switchbot.py [mac type cmd]" or "sudo python switchbot.py"')
+        'Usage: "sudo python switchbot.py [mac dev_type cmd]" or "sudo python switchbot.py"')
     connect = pexpect.spawn('hciconfig')
     pnum = connect.expect(["hci0", pexpect.EOF, pexpect.TIMEOUT])
     if pnum != 0:
@@ -258,9 +256,9 @@ def main():
 
     if len(sys.argv) == 4 or len(sys.argv) == 5:
         dev = sys.argv[1]
-        type = sys.argv[2]
+        dev_type = sys.argv[2]
         act = sys.argv[3] if len(sys.argv) < 5 else ('Turn ' + sys.argv[4])
-        trigger_device([dev, type, act])
+        trigger_device([dev, dev_type, act])
 
     elif len(sys.argv) == 1:
         # Start scanning...
@@ -288,7 +286,7 @@ def main():
     else:
         print('Wrong cmd!')
         print(
-            'Usage: "sudo python switchbot.py [mac type cmd]" or "sudo python switchbot.py"')
+            'Usage: "sudo python switchbot.py [mac dev_type cmd]" or "sudo python switchbot.py"')
 
     connect = pexpect.spawn('hciconfig')
 
