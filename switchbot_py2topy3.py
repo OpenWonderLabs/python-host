@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2017-present WonderLabs, Inc. <support@wondertechlabs.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -97,7 +97,7 @@ class DevScanner(DefaultDelegate):
 
             if mac != 0:
                 # print binascii.b2a_hex(model),binascii.b2a_hex(mode)
-                dev_list.append([mac, model, mode, meterTemp, meterHumi])
+                dev_list.append([mac, model.decode('utf-8'), mode, meterTemp, meterHumi])
 
         # print dev_list
         for (mac, dev_type, mode, meterTemp, meterHumi) in dev_list:
@@ -152,7 +152,7 @@ def trigger_device(device):
     print('Connection successful.')
     con.sendline('char-desc')
     con.expect(['\[CON\]', 'cba20002-224d-11e6-9fb8-0002a5d5c51b'])
-    cmd_handle = con.before.split('\n')[-1].split()[2].strip(',')
+    cmd_handle = con.before.decode('utf-8').split('\n')[-1].split()[2].strip(',')
     if type == 'Bot':
         if act == 'Turn On':
             con.sendline('char-write-cmd ' + cmd_handle + ' 570101')
@@ -170,7 +170,7 @@ def trigger_device(device):
         con.sendline('char-read-uuid cba20003-224d-11e6-9fb8-0002a5d5c51b')
         index = con.expect(['value:[0-9a-fA-F ]+', 'Error'])
         if index == 0:
-            data = con.after.split(':')[1].replace(' ', '')
+            data = con.after.decode('utf-8').split(':')[1].replace(' ', '')
             tempFra = int(data[3], 16) / 10.0
             tempInt = int(data[4:6], 16)
             if tempInt < 128:
@@ -200,7 +200,7 @@ def trigger_device(device):
 def main():
     # Check bluetooth dongle
     print(
-        'Usage: "sudo python switchbot.py [mac type cmd]" or "sudo python switchbot.py"')
+        'Usage: "sudo python3 switchbot_py2topy3.py [mac type cmd]" or "sudo python3 switchbot_py2topy3.py"')
     connect = pexpect.spawn('hciconfig')
     pnum = connect.expect(["hci0", pexpect.EOF, pexpect.TIMEOUT])
     if pnum != 0:
@@ -242,7 +242,7 @@ def main():
     else:
         print('Wrong cmd!')
         print(
-            'Usage: "sudo python switchbot.py [mac type cmd]" or "sudo python switchbot.py"')
+            'Usage: "sudo python3 switchbot_py2topy3.py [mac type cmd]" or "sudo python3 switchbot_py2topy3.py"')
 
     connect = pexpect.spawn('hciconfig')
 
