@@ -97,7 +97,7 @@ Enjoy :)
 
 [Curtain BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Curtain-BLE-open-API)
 
-[Contact Sensor open api](https://github.com/OpenWonderLabs/python-host/wiki/Contact-Sensor-BLE-open-API)
+[Contact Sensor BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Contact-Sensor-BLE-open-API)
 
 [Motion Sensor BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Motion-Sensor-BLE-open-API)
 
