@@ -90,6 +90,17 @@ eg: sudo python3 switchbot_py3.py -d xx:xx:xx:xx:xx:xx -c close
 
 Enjoy :)
 
+# Wiki
+[Bot BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Bot-BLE-open-API)
+
+[Meter BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Meter-BLE-open-API)
+
+[Curtain BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Curtain-BLE-open-API)
+
+[Contact Sensor open api](https://github.com/OpenWonderLabs/python-host/wiki/Contact-Sensor-BLE-open-API)
+
+[Motion Sensor BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Motion-Sensor-BLE-open-API)
+
 # Thanks to contributors
 [@BlackLight](https://github.com/BlackLight)
 
