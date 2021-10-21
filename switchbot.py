@@ -106,7 +106,7 @@ class DevScanner(DefaultDelegate):
                         # print(adtype, desc, value)
                         pirSta = (
                             int(value[6:7].encode('utf-8'), 16) >> 2) & 0x01
-                        lightSta = (int(value[13:14].encode('utf-8'), 16) & 0x03) - 1
+                        lightSta = (int(value[15:16].encode('utf-8'), 16) & 0x03) - 1
                         # TODO:
                         diffSec = 0
                         param_list.extend([pirSta, lightSta, diffSec])
