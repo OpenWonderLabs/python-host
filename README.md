@@ -90,16 +90,19 @@ eg: sudo python3 switchbot_py3.py -d xx:xx:xx:xx:xx:xx -c close
 
 Enjoy :)
 
-# Wiki
-[Bot BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Bot-BLE-open-API)
+# References
 
-[Meter BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Meter-BLE-open-API)
+[SwitchBotAPI-BLE](https://github.com/OpenWonderLabs/SwitchBotAPI-BLE) 
 
-[Curtain BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Curtain-BLE-open-API)
+- [Bot BLE open api](https://github.com/OpenWonderLabs/SwitchBotAPI-BLE/blob/latest/devicetypes/bot.md)
 
-[Contact Sensor BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Contact-Sensor-BLE-open-API)
+- [Meter BLE open api](https://github.com/OpenWonderLabs/SwitchBotAPI-BLE/blob/latest/devicetypes/meter.md)
 
-[Motion Sensor BLE open api](https://github.com/OpenWonderLabs/python-host/wiki/Motion-Sensor-BLE-open-API)
+- [Curtain BLE open api](https://github.com/OpenWonderLabs/SwitchBotAPI-BLE/blob/latest/devicetypes/curtain.md)
+
+- [Contact Sensor BLE open api](https://github.com/OpenWonderLabs/SwitchBotAPI-BLE/blob/latest/devicetypes/contactsensor.md)
+
+- [Motion Sensor BLE open api](https://github.com/OpenWonderLabs/SwitchBotAPI-BLE/blob/latest/devicetypes/motionsensor.md)
 
 # Thanks to contributors
 [@BlackLight](https://github.com/BlackLight)
