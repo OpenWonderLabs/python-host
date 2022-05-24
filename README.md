@@ -59,7 +59,13 @@ The original `switchbot.py` script will work only on Python 2 and it relies on t
 
 If you want to use the script on Python 3 or on a Linux distro that no longer ships Bluez with the old tools, use the switchbot_py3.py script instead.
 
-To install the required dependencies on Ubuntu/Debian/Raspbian:
+To install the required dependencies on Debian 11 "Bullseye", Raspberry Pi OS or Ubuntu 21.10 or later:
+
+```sh
+sudo apt install python3-bluez
+```
+
+On older versions of Ubuntu/Debian/Raspbian:
 
 ```shell
 sudo apt-get install python3-pip
