@@ -93,15 +93,14 @@ class DevScanner(DefaultDelegate):
                         # print(adtype, desc, value)
                         pirSta = (
                             int(value[6:7].encode('utf-8'), 16) >> 2) & 0x01
-                        # TODO:
-                        # diffSec = (
-                        #     int(value[10:11].encode('utf-8'), 16) >> 2) & 0x02
-                        diffSec = 0
+                        diffSec = (
+                            (int(value[10:11].encode('utf-8'), 16) & 0x04) << 14) \
+                            + int(value[16:20].encode('utf-8'), 16) 
                         hallSta = (
                             int(value[11:12].encode('utf-8'), 16) >> 1) & 0x03
                         lightSta = int(value[11:12].encode('utf-8'), 16) & 0x01
                         param_list.extend([hallSta, pirSta, lightSta, diffSec])
-                        # print(pirSta, diffSec, hallSta, lightSta)
+                        # print(pirSta, diffSec, hallSta, lightSta, diffSec)
                     elif dev_type == 's':
                         # print(adtype, desc, value)
                         pirSta = (
@@ -154,12 +153,9 @@ class DevScanner(DefaultDelegate):
                 curtain_list.append([mac, 'Curtain', 'Close'])
                 curtain_list.append([mac, 'Curtain', 'Pause'])
             elif dev_type == 'd':
-                # TODO:
-                # timeTirgger = datetime.datetime.now() + datetime.timedelta(0, params[3])
-                # contact_list.append([mac, 'Contact', "%s, %s, %s, Last trigger: %s" %
-                #                      (hall_tip[params[0]], pir_tip[params[1]], light_tip[params[2]], timeTirgger.strftime("%Y-%m-%d %H:%M"))])
-                contact_list.append([mac, 'Contact', "%s, %s, %s" %
-                                     (hall_tip[params[0]], pir_tip[params[1]], light_tip[params[2]])])
+                timeTrigger = datetime.datetime.now() - datetime.timedelta(0, params[3])
+                contact_list.append([mac, 'Contact', "%s, %s, %s, Last trigger: %s" %
+                                     (hall_tip[params[0]], pir_tip[params[1]], light_tip[params[2]], timeTrigger.strftime("%Y-%m-%d %H:%M"))])
             elif dev_type == 's':
                 motion_list.append([mac, 'Motion', "%s, %s" %
                                     (pir_tip[params[0]], light_tip[params[1]])])
